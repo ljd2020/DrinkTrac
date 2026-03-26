@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import BACDisplay from '../components/dashboard/BACDisplay'
 import BACGraph from '../components/dashboard/BACGraph'
 import SobrietyTimer from '../components/dashboard/SobrietyTimer'
@@ -34,12 +35,12 @@ export default function DashboardPage() {
           <p className="text-[var(--color-text-secondary)] mb-6">
             Create a profile to start tracking your BAC
           </p>
-          <a
-            href="/profile"
+          <Link
+            to="/profile"
             className="inline-block px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-medium hover:bg-[var(--color-accent-hover)] transition-colors"
           >
             Create Profile
-          </a>
+          </Link>
         </div>
 
         <div className="mt-8 bg-[var(--color-bg-card)] rounded-xl p-4">
