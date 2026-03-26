@@ -10,28 +10,32 @@ import {
   Tooltip,
   type ChartOptions,
 } from 'chart.js'
+import annotationPlugin from 'chartjs-plugin-annotation'
 import type { BACPoint } from '../../lib/bac-engine'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, annotationPlugin)
 
 interface BACGraphProps {
   points: BACPoint[]
 }
 
 export default function BACGraph({ points }: BACGraphProps) {
-  const chartData = useMemo(() => {
+  const { chartData, nowLabel } = useMemo(() => {
     if (points.length === 0) {
       return {
-        labels: [] as string[],
-        datasets: [{
-          data: [] as number[],
-          borderColor: '#7c5cfc',
-          backgroundColor: 'rgba(124, 92, 252, 0.15)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          borderWidth: 2,
-        }],
+        nowLabel: null as string | null,
+        chartData: {
+          labels: [] as string[],
+          datasets: [{
+            data: [] as number[],
+            borderColor: '#7c5cfc',
+            backgroundColor: 'rgba(124, 92, 252, 0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2,
+          }],
+        },
       }
     }
 
@@ -47,34 +51,42 @@ export default function BACGraph({ points }: BACGraphProps) {
 
     const data = sampled.map((p) => Math.round(p.bac * 1000) / 1000)
 
-    // Create gradient color based on BAC values
-    const borderColor = data.map((bac) => {
-      if (bac <= 0.04) return '#4ade80'
-      if (bac <= 0.08) return '#facc15'
-      return '#f87171'
-    })
+    // Find the label closest to "now"
+    const now = Date.now()
+    let closestIdx = 0
+    let closestDiff = Infinity
+    for (let i = 0; i < sampled.length; i++) {
+      const diff = Math.abs(new Date(sampled[i].time).getTime() - now)
+      if (diff < closestDiff) {
+        closestDiff = diff
+        closestIdx = i
+      }
+    }
 
     return {
-      labels,
-      datasets: [
-        {
-          data,
-          borderColor: borderColor.length > 0 ? '#7c5cfc' : '#7c5cfc',
-          backgroundColor: 'rgba(124, 92, 252, 0.15)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          borderWidth: 2,
-          segment: {
-            borderColor: (ctx: { p1DataIndex: number }) => {
-              const bac = data[ctx.p1DataIndex]
-              if (bac > 0.08) return '#f87171'
-              if (bac > 0.04) return '#facc15'
-              return '#4ade80'
+      nowLabel: labels[closestIdx] ?? null,
+      chartData: {
+        labels,
+        datasets: [
+          {
+            data,
+            borderColor: '#7c5cfc',
+            backgroundColor: 'rgba(124, 92, 252, 0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2,
+            segment: {
+              borderColor: (ctx: { p1DataIndex: number }) => {
+                const bac = data[ctx.p1DataIndex]
+                if (bac > 0.08) return '#f87171'
+                if (bac > 0.04) return '#facc15'
+                return '#4ade80'
+              },
             },
           },
-        },
-      ],
+        ],
+      },
     }
   }, [points])
 
@@ -91,6 +103,26 @@ export default function BACGraph({ points }: BACGraphProps) {
           label: (ctx) => `BAC: ${(ctx.raw as number).toFixed(3)}`,
         },
       },
+      annotation: nowLabel ? {
+        annotations: {
+          nowLine: {
+            type: 'line' as const,
+            xMin: nowLabel,
+            xMax: nowLabel,
+            borderColor: 'rgba(255, 255, 255, 0.5)',
+            borderWidth: 1.5,
+            borderDash: [4, 3],
+            label: {
+              display: true,
+              content: 'Now',
+              position: 'start' as const,
+              color: 'rgba(255, 255, 255, 0.7)',
+              font: { size: 10 },
+              backgroundColor: 'transparent',
+            },
+          },
+        },
+      } : undefined,
     },
     scales: {
       x: {

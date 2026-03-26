@@ -4,6 +4,7 @@ import ActiveDrinks from '../components/session/ActiveDrinks'
 import { useProfiles } from '../hooks/useProfiles'
 import { useSession } from '../hooks/useSession'
 import { useDrinks } from '../hooks/useDrinks'
+import type { SessionDrink } from '../db/schema'
 
 type StomachContent = 'empty' | 'light' | 'moderate' | 'full'
 
@@ -50,8 +51,8 @@ export default function SessionPage() {
     })
   }
 
-  function handleUpdateStartTime(id: number, newTime: Date) {
-    updateSessionDrink(id, { timestamp: newTime })
+  function handleUpdateDrink(id: number, data: Partial<SessionDrink>) {
+    updateSessionDrink(id, data)
   }
 
   const stomachOptions: { value: StomachContent; label: string }[] = [
@@ -102,7 +103,7 @@ export default function SessionPage() {
       <ActiveDrinks
         drinks={sessionDrinks}
         onFinish={finishDrink}
-        onUpdateStartTime={handleUpdateStartTime}
+        onUpdateDrink={handleUpdateDrink}
         onRemove={removeSessionDrink}
       />
 

@@ -4,7 +4,7 @@ import type { SessionDrink } from '../../db/schema'
 interface ActiveDrinksProps {
   drinks: SessionDrink[]
   onFinish: (id: number) => void
-  onUpdateStartTime: (id: number, newTime: Date) => void
+  onUpdateDrink: (id: number, data: Partial<SessionDrink>) => void
   onRemove: (id: number) => void
 }
 
@@ -40,7 +40,7 @@ function toTimeInputValue(date: Date): string {
 export default function ActiveDrinks({
   drinks,
   onFinish,
-  onUpdateStartTime,
+  onUpdateDrink,
   onRemove,
 }: ActiveDrinksProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -73,7 +73,7 @@ export default function ActiveDrinks({
           isExpanded={expandedId === drink.id}
           onToggle={() => setExpandedId(expandedId === drink.id ? null : drink.id)}
           onFinish={onFinish}
-          onUpdateStartTime={onUpdateStartTime}
+          onUpdateDrink={onUpdateDrink}
           onRemove={onRemove}
         />
       ))}
@@ -91,7 +91,7 @@ export default function ActiveDrinks({
           isExpanded={expandedId === drink.id}
           onToggle={() => setExpandedId(expandedId === drink.id ? null : drink.id)}
           onFinish={onFinish}
-          onUpdateStartTime={onUpdateStartTime}
+          onUpdateDrink={onUpdateDrink}
           onRemove={onRemove}
         />
       ))}
@@ -104,23 +104,47 @@ function DrinkCard({
   isExpanded,
   onToggle,
   onFinish,
-  onUpdateStartTime,
+  onUpdateDrink,
   onRemove,
 }: {
   drink: SessionDrink
   isExpanded: boolean
   onToggle: () => void
   onFinish: (id: number) => void
-  onUpdateStartTime: (id: number, newTime: Date) => void
+  onUpdateDrink: (id: number, data: Partial<SessionDrink>) => void
   onRemove: (id: number) => void
 }) {
   const isActive = !drink.finishedAt
 
-  function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleStartTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
     const [hours, minutes] = e.target.value.split(':').map(Number)
-    const newTime = new Date(drink.timestamp)
-    newTime.setHours(hours, minutes, 0, 0)
-    onUpdateStartTime(drink.id, newTime)
+    const newStart = new Date(drink.timestamp)
+    newStart.setHours(hours, minutes, 0, 0)
+    if (drink.finishedAt) {
+      const duration = Math.max(1, Math.round((new Date(drink.finishedAt).getTime() - newStart.getTime()) / 60000))
+      onUpdateDrink(drink.id, { timestamp: newStart, durationMinutes: duration })
+    } else {
+      onUpdateDrink(drink.id, { timestamp: newStart })
+    }
+  }
+
+  function handleEndTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const [hours, minutes] = e.target.value.split(':').map(Number)
+    const newEnd = new Date(drink.finishedAt ?? drink.timestamp)
+    newEnd.setHours(hours, minutes, 0, 0)
+    const duration = Math.max(1, Math.round((newEnd.getTime() - new Date(drink.timestamp).getTime()) / 60000))
+    onUpdateDrink(drink.id, { finishedAt: newEnd, durationMinutes: duration })
+  }
+
+  function handleDurationChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const mins = parseInt(e.target.value)
+    if (isNaN(mins) || mins < 1) return
+    if (drink.finishedAt) {
+      const newEnd = new Date(new Date(drink.timestamp).getTime() + mins * 60000)
+      onUpdateDrink(drink.id, { durationMinutes: mins, finishedAt: newEnd })
+    } else {
+      onUpdateDrink(drink.id, { durationMinutes: mins })
+    }
   }
 
   return (
@@ -186,13 +210,40 @@ function DrinkCard({
           )}
 
           <div className="flex items-center gap-2">
-            <label className="text-xs text-[var(--color-text-secondary)]">Started:</label>
+            <label className="text-xs text-[var(--color-text-secondary)] w-16">Started:</label>
             <input
               type="time"
               value={toTimeInputValue(drink.timestamp)}
-              onChange={handleTimeChange}
+              onChange={handleStartTimeChange}
               className="flex-1 bg-[var(--color-bg-secondary)] border border-[var(--color-bg-card)] rounded-lg px-2 py-1.5 text-sm text-[var(--color-text-primary)]"
             />
+          </div>
+
+          {!isActive && drink.finishedAt && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-[var(--color-text-secondary)] w-16">Finished:</label>
+              <input
+                type="time"
+                value={toTimeInputValue(drink.finishedAt)}
+                onChange={handleEndTimeChange}
+                className="flex-1 bg-[var(--color-bg-secondary)] border border-[var(--color-bg-card)] rounded-lg px-2 py-1.5 text-sm text-[var(--color-text-primary)]"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[var(--color-text-secondary)] w-16">Duration:</label>
+            <div className="flex items-center gap-1.5 flex-1">
+              <input
+                type="number"
+                value={drink.durationMinutes}
+                onChange={handleDurationChange}
+                min="1"
+                max="480"
+                className="w-20 bg-[var(--color-bg-secondary)] border border-[var(--color-bg-card)] rounded-lg px-2 py-1.5 text-sm text-[var(--color-text-primary)]"
+              />
+              <span className="text-xs text-[var(--color-text-secondary)]">min</span>
+            </div>
           </div>
 
           <button
