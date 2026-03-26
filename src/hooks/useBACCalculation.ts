@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   computeBACTimeSeries,
   getCurrentBAC,
@@ -45,12 +45,22 @@ export function useBACCalculation(
   profile: Profile | undefined,
   sessionDrinks: SessionDrink[],
 ) {
+  // Tick every 30s to recompute BAC for in-progress drinks
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const hasInProgress = sessionDrinks.some((d) => !d.finishedAt)
+    if (!hasInProgress) return
+    const interval = setInterval(() => setTick((t) => t + 1), 30000)
+    return () => clearInterval(interval)
+  }, [sessionDrinks])
+
   const timeSeries = useMemo<BACPoint[]>(() => {
     if (!profile || sessionDrinks.length === 0) return []
     const userProfile = profileToUserProfile(profile)
     const events = sessionDrinks.map(sessionDrinkToEvent)
     return computeBACTimeSeries(userProfile, events)
-  }, [profile, sessionDrinks])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, sessionDrinks, tick])
 
   const currentBAC = getCurrentBAC(timeSeries)
   const timeToSober = getTimeToSober(timeSeries)

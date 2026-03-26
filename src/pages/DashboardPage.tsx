@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import BACDisplay from '../components/dashboard/BACDisplay'
 import BACGraph from '../components/dashboard/BACGraph'
@@ -16,13 +15,6 @@ export default function DashboardPage() {
     defaultProfile,
     sessionDrinks,
   )
-
-  // Re-render every 30 seconds to update current BAC from time series
-  const [, setTick] = useState(0)
-  useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 30000)
-    return () => clearInterval(interval)
-  }, [])
 
   if (!defaultProfile) {
     return (
