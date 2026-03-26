@@ -107,8 +107,8 @@ export default function BACGraph({ points }: BACGraphProps) {
         annotations: {
           nowLine: {
             type: 'line' as const,
-            xMin: nowLabel,
-            xMax: nowLabel,
+            scaleID: 'x',
+            value: nowLabel,
             borderColor: 'rgba(255, 255, 255, 0.5)',
             borderWidth: 1.5,
             borderDash: [4, 3],
