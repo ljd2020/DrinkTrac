@@ -80,8 +80,8 @@ describe('computeBACTimeSeries', () => {
     expect(peak).not.toBeNull()
     expect(peak!.bac).toBeGreaterThan(0)
 
-    // Should end at 0
-    expect(points[points.length - 1].bac).toBe(0)
+    // Should end at effectively 0
+    expect(points[points.length - 1].bac).toBeLessThan(0.001)
   })
 
   it('one standard beer for 180lb male peaks around 0.02-0.04', () => {

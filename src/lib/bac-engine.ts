@@ -97,7 +97,6 @@ export function computeBACTimeSeries(
 
   // Track cumulative elimination
   let totalEliminated = 0
-  let prevBacRaw = 0
 
   for (let t = startTime; t <= endTime; t += minuteMs) {
     // Sum absorbed alcohol from all drinks
@@ -110,20 +109,18 @@ export function computeBACTimeSeries(
     // Raw BAC from absorption (g/dL)
     const bacRaw = totalAbsorbedGrams / (r * profile.weightKg * 10)
 
-    // Eliminate only when there's alcohol in the blood
-    // Use incremental elimination: beta * (1 minute in hours)
-    if (prevBacRaw - totalEliminated > 0.0001) {
+    // Eliminate while there's alcohol in the blood
+    if (bacRaw > totalEliminated) {
       totalEliminated += beta * (1 / 60)
     }
 
     const bac = Math.max(0, bacRaw - totalEliminated)
-    prevBacRaw = bacRaw
 
     points.push({ time: new Date(t), bac })
 
-    // Stop if BAC has returned to 0 and we're well past the last drink
+    // Stop once BAC is effectively zero and we're past the last drink
     const lastDrinkTime = sortedDrinks[sortedDrinks.length - 1].timestamp.getTime()
-    if (bac === 0 && t > lastDrinkTime + 30 * minuteMs && totalAbsorbedGrams > 0.1) {
+    if (bac < 0.0005 && t > lastDrinkTime + 30 * minuteMs && totalAbsorbedGrams > 0.1) {
       break
     }
   }
