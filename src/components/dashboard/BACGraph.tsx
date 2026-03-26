@@ -20,10 +20,10 @@ interface BACGraphProps {
 }
 
 export default function BACGraph({ points }: BACGraphProps) {
-  const { chartData, nowLabel, peakBAC } = useMemo(() => {
+  const { chartData, nowIdx, peakBAC } = useMemo(() => {
     if (points.length === 0) {
       return {
-        nowLabel: null as string | null,
+        nowIdx: null as number | null,
         peakBAC: 0,
         chartData: {
           labels: [] as string[],
@@ -83,7 +83,7 @@ export default function BACGraph({ points }: BACGraphProps) {
     const peakBAC = Math.max(...data, 0)
 
     return {
-      nowLabel: labels[closestIdx] ?? null,
+      nowIdx: closestIdx,
       peakBAC,
       chartData: {
         labels,
@@ -123,12 +123,12 @@ export default function BACGraph({ points }: BACGraphProps) {
           label: (ctx) => `BAC: ${(ctx.raw as number).toFixed(3)}`,
         },
       },
-      annotation: nowLabel ? {
+      annotation: nowIdx !== null ? {
         annotations: {
           nowLine: {
             type: 'line' as const,
             scaleID: 'x',
-            value: nowLabel,
+            value: nowIdx,
             borderColor: 'rgba(255, 255, 255, 0.5)',
             borderWidth: 1.5,
             borderDash: [4, 3],
@@ -159,7 +159,8 @@ export default function BACGraph({ points }: BACGraphProps) {
         ticks: {
           color: '#a09bb5',
           font: { size: 10 },
-          callback: (value) => (value as number).toFixed(2),
+          stepSize: peakBAC <= 0.05 ? 0.01 : peakBAC <= 0.1 ? 0.02 : 0.05,
+          callback: (value) => (value as number).toFixed(peakBAC <= 0.1 ? 2 : 1),
         },
         grid: { color: 'rgba(160, 155, 181, 0.1)' },
       },

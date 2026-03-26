@@ -23,13 +23,12 @@ function profileToUserProfile(profile: Profile): UserProfile {
 function sessionDrinkToEvent(sd: SessionDrink): DrinkEvent {
   let durationMinutes = sd.durationMinutes
 
-  // For in-progress drinks (not yet finished), use elapsed time
-  // but cap at the default duration if not yet exceeded
+  // For in-progress drinks (not yet finished), use elapsed time while
+  // actively drinking, but cap at the default duration. If a user forgets
+  // to finish, the drink simply uses its default duration.
   if (!sd.finishedAt) {
     const elapsedMinutes = (Date.now() - new Date(sd.timestamp).getTime()) / (60 * 1000)
-    // Use the larger of elapsed time or default duration
-    // This ensures the BAC engine models ongoing absorption for active drinks
-    durationMinutes = Math.max(durationMinutes, elapsedMinutes)
+    durationMinutes = Math.min(durationMinutes, Math.max(1, elapsedMinutes))
   }
 
   return {
