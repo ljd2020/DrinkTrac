@@ -70,7 +70,6 @@ export default function BACGraph({ points }: BACGraphProps) {
     const data = sampled.map((p) => Math.round(p.bac * 1000) / 1000)
 
     // Find the label closest to "now"
-    const now = Date.now()
     let closestIdx = 0
     let closestDiff = Infinity
     for (let i = 0; i < sampled.length; i++) {
