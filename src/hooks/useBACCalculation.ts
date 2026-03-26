@@ -21,11 +21,22 @@ function profileToUserProfile(profile: Profile): UserProfile {
 }
 
 function sessionDrinkToEvent(sd: SessionDrink): DrinkEvent {
+  let durationMinutes = sd.durationMinutes
+
+  // For in-progress drinks (not yet finished), use elapsed time
+  // but cap at the default duration if not yet exceeded
+  if (!sd.finishedAt) {
+    const elapsedMinutes = (Date.now() - new Date(sd.timestamp).getTime()) / (60 * 1000)
+    // Use the larger of elapsed time or default duration
+    // This ensures the BAC engine models ongoing absorption for active drinks
+    durationMinutes = Math.max(durationMinutes, elapsedMinutes)
+  }
+
   return {
     timestamp: sd.timestamp,
     volumeMl: sd.volumeMl,
     abv: sd.abv,
-    durationMinutes: sd.durationMinutes,
+    durationMinutes,
     stomachContent: sd.stomachContent,
   }
 }

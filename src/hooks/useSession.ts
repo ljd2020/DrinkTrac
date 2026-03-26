@@ -19,6 +19,27 @@ export function useSession(profileId: number | undefined) {
     return db.sessionDrinks.add(data as SessionDrink)
   }
 
+  async function updateSessionDrink(
+    id: number,
+    data: Partial<Omit<SessionDrink, 'id'>>,
+  ) {
+    await db.sessionDrinks.update(id, data)
+  }
+
+  async function finishDrink(id: number) {
+    const drink = await db.sessionDrinks.get(id)
+    if (!drink) return
+    const now = new Date()
+    const durationMinutes = Math.max(
+      1,
+      (now.getTime() - new Date(drink.timestamp).getTime()) / (60 * 1000),
+    )
+    await db.sessionDrinks.update(id, {
+      finishedAt: now,
+      durationMinutes: Math.round(durationMinutes),
+    })
+  }
+
   async function removeSessionDrink(id: number) {
     await db.sessionDrinks.delete(id)
   }
@@ -28,5 +49,12 @@ export function useSession(profileId: number | undefined) {
     await db.sessionDrinks.where('profileId').equals(profileId).delete()
   }
 
-  return { sessionDrinks, addSessionDrink, removeSessionDrink, clearSession }
+  return {
+    sessionDrinks,
+    addSessionDrink,
+    updateSessionDrink,
+    finishDrink,
+    removeSessionDrink,
+    clearSession,
+  }
 }

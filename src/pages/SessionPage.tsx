@@ -9,11 +9,16 @@ type StomachContent = 'empty' | 'light' | 'moderate' | 'full'
 
 export default function SessionPage() {
   const { defaultProfile } = useProfiles()
-  const { sessionDrinks, addSessionDrink, removeSessionDrink, clearSession } =
-    useSession(defaultProfile?.id)
+  const {
+    sessionDrinks,
+    addSessionDrink,
+    updateSessionDrink,
+    finishDrink,
+    removeSessionDrink,
+    clearSession,
+  } = useSession(defaultProfile?.id)
   const { customDrinks } = useDrinks()
   const [stomachContent, setStomachContent] = useState<StomachContent>('light')
-  const [drinkDuration, setDrinkDuration] = useState(15)
 
   if (!defaultProfile) {
     return (
@@ -30,6 +35,7 @@ export default function SessionPage() {
     volumeMl: number
     abv: number
     icon: string
+    defaultDurationMinutes: number
   }) {
     addSessionDrink({
       profileId: defaultProfile!.id,
@@ -38,9 +44,14 @@ export default function SessionPage() {
       abv: drink.abv,
       icon: drink.icon,
       timestamp: new Date(),
-      durationMinutes: drinkDuration,
+      durationMinutes: drink.defaultDurationMinutes,
+      finishedAt: null,
       stomachContent,
     })
+  }
+
+  function handleUpdateStartTime(id: number, newTime: Date) {
+    updateSessionDrink(id, { timestamp: newTime })
   }
 
   const stomachOptions: { value: StomachContent; label: string }[] = [
@@ -66,46 +77,34 @@ export default function SessionPage() {
         )}
       </div>
 
-      {/* Settings */}
-      <div className="bg-[var(--color-bg-card)] rounded-xl p-4 space-y-3">
-        <div>
-          <label className="text-sm text-[var(--color-text-secondary)] block mb-1.5">
-            Stomach Content
-          </label>
-          <div className="flex gap-2">
-            {stomachOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setStomachContent(opt.value)}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                  stomachContent === opt.value
-                    ? 'bg-[var(--color-accent)] text-white'
-                    : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-sm text-[var(--color-text-secondary)] block mb-1.5">
-            Drink Duration: {drinkDuration} min
-          </label>
-          <input
-            type="range"
-            min="5"
-            max="60"
-            step="5"
-            value={drinkDuration}
-            onChange={(e) => setDrinkDuration(parseInt(e.target.value))}
-            className="w-full accent-[var(--color-accent)]"
-          />
+      {/* Stomach content selector */}
+      <div className="bg-[var(--color-bg-card)] rounded-xl p-4">
+        <label className="text-sm text-[var(--color-text-secondary)] block mb-1.5">
+          Stomach Content
+        </label>
+        <div className="flex gap-2">
+          {stomachOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setStomachContent(opt.value)}
+              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+                stomachContent === opt.value
+                  ? 'bg-[var(--color-accent)] text-white'
+                  : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <ActiveDrinks drinks={sessionDrinks} onRemove={removeSessionDrink} />
+      <ActiveDrinks
+        drinks={sessionDrinks}
+        onFinish={finishDrink}
+        onUpdateStartTime={handleUpdateStartTime}
+        onRemove={removeSessionDrink}
+      />
 
       <DrinkPicker customDrinks={customDrinks} onSelect={handleSelectDrink} />
     </div>

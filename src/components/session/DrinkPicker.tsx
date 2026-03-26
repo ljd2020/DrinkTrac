@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DEFAULT_DRINKS, type DefaultDrink } from '../../lib/constants'
+import { DEFAULT_DRINKS, CATEGORY_DEFAULT_DURATION, type DefaultDrink } from '../../lib/constants'
 import type { CustomDrink } from '../../db/schema'
 import { standardDrinks } from '../../lib/alcohol-utils'
 
@@ -14,6 +14,7 @@ interface DrinkPickerProps {
     volumeMl: number
     abv: number
     icon: string
+    defaultDurationMinutes: number
   }) => void
 }
 
@@ -68,6 +69,8 @@ export default function DrinkPicker({ customDrinks, onSelect }: DrinkPickerProps
                 volumeMl: drink.volumeMl,
                 abv: drink.abv,
                 icon: drink.icon,
+                defaultDurationMinutes: drink.defaultDurationMinutes
+                  ?? CATEGORY_DEFAULT_DURATION[drink.category] ?? 15,
               })
             }
             className="bg-[var(--color-bg-card)] rounded-xl p-3 text-left hover:bg-[var(--color-bg-secondary)] transition-colors active:scale-95"

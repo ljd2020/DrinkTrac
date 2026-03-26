@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { CustomDrink } from '../../db/schema'
+import { CATEGORY_DEFAULT_DURATION } from '../../lib/constants'
 
 interface DrinkEditorProps {
   initial?: Partial<CustomDrink>
@@ -25,14 +26,19 @@ export default function DrinkEditor({
   const [category, setCategory] = useState<CustomDrink['category']>(
     initial?.category ?? 'custom',
   )
+  const [defaultDuration, setDefaultDuration] = useState(
+    initial?.defaultDurationMinutes?.toString() ??
+      CATEGORY_DEFAULT_DURATION[initial?.category ?? 'custom']?.toString() ?? '15',
+  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const vol = parseFloat(volumeMl)
     const abv = parseFloat(abvPct) / 100
+    const dur = parseInt(defaultDuration) || CATEGORY_DEFAULT_DURATION[category] || 15
     if (!name || isNaN(vol) || isNaN(abv) || vol <= 0 || abv <= 0 || abv > 1) return
 
-    onSubmit({ name, volumeMl: vol, abv, icon, category })
+    onSubmit({ name, volumeMl: vol, abv, icon, category, defaultDurationMinutes: dur })
   }
 
   const inputClass =
@@ -102,8 +108,21 @@ export default function DrinkEditor({
         </div>
       </div>
 
-      <div>
-        <label className={labelClass}>Category</label>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Default Duration (min)</label>
+          <input
+            type="number"
+            value={defaultDuration}
+            onChange={(e) => setDefaultDuration(e.target.value)}
+            className={inputClass}
+            placeholder="15"
+            min="1"
+            max="120"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Category</label>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as CustomDrink['category'])}
@@ -115,6 +134,7 @@ export default function DrinkEditor({
           <option value="cocktail">Cocktail</option>
           <option value="custom">Custom</option>
         </select>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">

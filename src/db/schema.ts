@@ -19,6 +19,7 @@ export interface CustomDrink {
   abv: number
   icon: string
   category: 'beer' | 'wine' | 'spirit' | 'cocktail' | 'custom'
+  defaultDurationMinutes: number
 }
 
 export interface SessionDrink {
@@ -30,6 +31,7 @@ export interface SessionDrink {
   icon: string
   timestamp: Date
   durationMinutes: number
+  finishedAt: Date | null
   stomachContent: 'empty' | 'light' | 'moderate' | 'full'
 }
 
@@ -43,4 +45,17 @@ db.version(1).stores({
   profiles: '++id, name, isDefault',
   customDrinks: '++id, name, category',
   sessionDrinks: '++id, profileId, timestamp',
+})
+
+db.version(2).stores({
+  profiles: '++id, name, isDefault',
+  customDrinks: '++id, name, category',
+  sessionDrinks: '++id, profileId, timestamp',
+}).upgrade((tx) => {
+  // Migrate existing session drinks: mark them as finished
+  return tx.table('sessionDrinks').toCollection().modify((drink: Record<string, unknown>) => {
+    const timestamp = drink['timestamp'] as Date
+    const durationMinutes = drink['durationMinutes'] as number
+    drink['finishedAt'] = new Date(new Date(timestamp).getTime() + durationMinutes * 60 * 1000)
+  })
 })
