@@ -3,9 +3,7 @@ import { db, type Profile } from '../db/schema'
 
 export function useProfiles() {
   const profiles = useLiveQuery(() => db.profiles.toArray()) ?? []
-  const defaultProfile = useLiveQuery(() =>
-    db.profiles.where('isDefault').equals(1).first()
-  )
+  const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
 
   async function addProfile(
     data: Omit<Profile, 'id' | 'createdAt' | 'isDefault'>,
