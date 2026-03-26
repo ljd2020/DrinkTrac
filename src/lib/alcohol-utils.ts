@@ -18,8 +18,9 @@ export function formatBAC(bac: number): string {
 /** Format minutes into hours and minutes string */
 export function formatDuration(totalMinutes: number): string {
   if (totalMinutes <= 0) return 'Sober'
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = Math.ceil(totalMinutes % 60)
+  const rounded = Math.round(totalMinutes)
+  const hours = Math.floor(rounded / 60)
+  const minutes = rounded % 60
   if (hours === 0) return `${minutes}m`
   if (minutes === 0) return `${hours}h`
   return `${hours}h ${minutes}m`

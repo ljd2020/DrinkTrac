@@ -20,10 +20,11 @@ interface BACGraphProps {
 }
 
 export default function BACGraph({ points }: BACGraphProps) {
-  const { chartData, nowLabel } = useMemo(() => {
+  const { chartData, nowLabel, peakBAC } = useMemo(() => {
     if (points.length === 0) {
       return {
         nowLabel: null as string | null,
+        peakBAC: 0,
         chartData: {
           labels: [] as string[],
           datasets: [{
@@ -39,10 +40,27 @@ export default function BACGraph({ points }: BACGraphProps) {
       }
     }
 
+    // Trim points: stop 30 min after BAC returns to 0, but always include "now"
+    const now = Date.now()
+    let lastNonZeroIdx = 0
+    for (let i = points.length - 1; i >= 0; i--) {
+      if (points[i].bac > 0) {
+        lastNonZeroIdx = i
+        break
+      }
+    }
+    const bufferPoints = 30 // ~30 minutes of padding after sober
+    const nowIdx = points.findIndex((p) => new Date(p.time).getTime() >= now)
+    const endIdx = Math.min(points.length, Math.max(
+      lastNonZeroIdx + bufferPoints + 1,
+      nowIdx >= 0 ? nowIdx + bufferPoints + 1 : 0,
+    ))
+    const trimmed = points.slice(0, endIdx)
+
     // Sample points to reduce chart size (max ~120 points)
     const maxPoints = 120
-    const step = Math.max(1, Math.floor(points.length / maxPoints))
-    const sampled = points.filter((_, i) => i % step === 0)
+    const step = Math.max(1, Math.floor(trimmed.length / maxPoints))
+    const sampled = trimmed.filter((_, i) => i % step === 0)
 
     const labels = sampled.map((p) => {
       const d = new Date(p.time)
@@ -63,8 +81,11 @@ export default function BACGraph({ points }: BACGraphProps) {
       }
     }
 
+    const peakBAC = Math.max(...data, 0)
+
     return {
       nowLabel: labels[closestIdx] ?? null,
+      peakBAC,
       chartData: {
         labels,
         datasets: [
@@ -135,6 +156,7 @@ export default function BACGraph({ points }: BACGraphProps) {
       },
       y: {
         min: 0,
+        max: peakBAC > 0 ? Math.ceil((peakBAC + 0.005) * 100) / 100 : undefined,
         ticks: {
           color: '#a09bb5',
           font: { size: 10 },
